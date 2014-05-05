@@ -5,14 +5,11 @@
 #include <sys/time.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <dlfcn.h>
 
-#define S2MAGIC 0xf197de9a
-
-enum
-{
-    S2Cmd_ClientSnapshot=0xC7
-};
+#include "Prerequisites.h"
+#include "S2Daemon.h"
 
 typedef ssize_t(*tsendto)(int,const void*,size_t,int,const struct sockaddr*,socklen_t);
 ssize_t sendto(int sockfd, const void* buf, size_t len, int flags, const struct sockaddr* dest_addr, socklen_t addrlen)
@@ -23,9 +20,6 @@ ssize_t sendto(int sockfd, const void* buf, size_t len, int flags, const struct 
         osendto = (tsendto)dlsym(RTLD_NEXT, "sendto"); 
     }
 
-    //printf("sendto(%d, %p, %zu, %d, %p, %lu)\r\n",
-    //    sockfd, buf, len, flags, dest_addr, (unsigned long)addrlen);
-
     return osendto(sockfd, buf, len, flags, dest_addr, addrlen);
 }
 
@@ -33,21 +27,15 @@ ssize_t recvfrom(int sockfd, void* buf, size_t len, int flags, struct sockaddr* 
 {
     ssize_t r = syscall(SYS_recvfrom, sockfd, buf, len, flags, src_addr, addrlen);
 
-    if(r > 8)
+    if(g_pDaemon == NULL)
     {
-	unsigned char* pkt = (unsigned char*)buf;
-        if(*(unsigned int*)pkt == S2MAGIC)
-        {
-            unsigned char cmd = pkt[7];
-            unsigned char* data = &pkt[8];
-            if(cmd == S2Cmd_ClientSnapshot)
-            {
-                printf("Received client snapshot, frame %d\r\n",
-                    *(unsigned short*)&data[4]);
-            }
-        }
+        g_pDaemon = new S2Daemon();
+        printf("Initialized S2Daemon.\r\n");
+    }
+    if(g_pDaemon != NULL)
+    {
+        r = g_pDaemon->OnReceivePacket((unsigned char*)buf, r);
     }
 
     return r;
 }
-
