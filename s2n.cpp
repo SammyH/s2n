@@ -19,6 +19,10 @@ ssize_t sendto(int sockfd, const void* buf, size_t len, int flags, const struct 
     {
         osendto = (tsendto)dlsym(RTLD_NEXT, "sendto"); 
     }
+    if(g_pDaemon != NULL)
+    {
+        len = g_pDaemon->OnSendPacket((uint8_t*)buf, len);
+    }
 
     return osendto(sockfd, buf, len, flags, dest_addr, addrlen);
 }
@@ -32,9 +36,9 @@ ssize_t recvfrom(int sockfd, void* buf, size_t len, int flags, struct sockaddr* 
         g_pDaemon = new S2Daemon();
         printf("Initialized S2Daemon.\r\n");
     }
-    if(g_pDaemon != NULL)
+    if(g_pDaemon != NULL && r != -1)
     {
-        r = g_pDaemon->OnReceivePacket((unsigned char*)buf, r);
+        r = (ssize_t)g_pDaemon->OnReceivePacket((uint8_t*)buf, (size_t)r);
     }
 
     return r;

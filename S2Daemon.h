@@ -9,6 +9,7 @@ public:
     S2Daemon(void);
     ~S2Daemon(void);
 
+    size_t OnSendPacket(uint8_t* pkt, size_t len);
     size_t OnReceivePacket(uint8_t* pkt, size_t len);
 };
 
