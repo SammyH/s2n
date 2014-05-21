@@ -5,6 +5,24 @@
 
 namespace Savage
 {
+    typedef void(*tCConsole_Execute)(void* pConsole, const std::string&);
+    tCConsole_Execute pConsoleExecute;
+    void** pConsole;
+    void Execute(const std::string& cmd)
+    {
+        if(pConsoleExecute == NULL)
+        {
+            pConsoleExecute = (tCConsole_Execute)dlsym(RTLD_NEXT, "_ZN8CConsole7ExecuteERKSs");
+            pConsole = (void**)((uint64_t)dlsym(RTLD_NEXT, "g_pConsole") - 0x10);
+            printf("pConsoleExecute %p\r\n", pConsoleExecute);
+            printf("pConsole %p\r\n", pConsole);
+        }
+        if(*pConsole)
+        {
+            pConsoleExecute(*pConsole, cmd);
+        }
+    }
+
     /* Sequence ID for "non-reliable" packets */
     const uint32_t kS2Magic = 0xF197DE9A;
 
@@ -53,8 +71,42 @@ namespace Savage
             do
             {
                 buffer[i++] = (char)ReadByte();
-            } while(buffer[i-1] != '\0');
+            } while(buffer[i-1] != '\0' && i < maxlen);
             return i;
+        }
+        uint32_t ReadPackedFields(uint8_t* out, uint32_t outlen)
+        {
+            memset(out, 0, outlen);
+            uint8_t b = ReadByte();
+            if((b&1) == 0)
+            {
+                return 0;
+            }
+            out[0] |= 0x2;
+            uint32_t currentBit = 1;
+            bool last = false;
+            for(uint32_t i = 2; i != (1 << 7); i=i*2)
+            {
+                if((b&i) == 1)
+                {
+                    if(last)
+                    {
+                        printf("Don't know what to do in this case (11)\r\n");
+                    }
+                    last = true;
+                } else
+                {
+                    currentBit = currentBit * 2;
+                    currentBit += last ? 1 : 0;
+                    out[currentBit/8] |= currentBit%8;
+                    last = false;
+                }
+            }
+            return 0;
+        }
+        uint32_t WritePackedFields(uint8_t* data, uint32_t len)
+        {
+            return 0;
         }
     private:
         uint32_t m_Pos;

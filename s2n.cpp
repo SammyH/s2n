@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <dlfcn.h>
+
 
 #include "Prerequisites.h"
 #include "S2Daemon.h"

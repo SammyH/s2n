@@ -3,6 +3,16 @@
 
 S2Daemon* g_pDaemon = NULL;
 
+static char* makeBitString(uint8_t value, char* buffer)
+{
+    for(int i = 0; i < 8; i++)
+    {
+        buffer[7-i] = (value>>i & 1) ? '1' : '0';
+    }
+    buffer[8] = '\0';
+    return buffer;
+}
+
 static void dump(uint8_t* buf, size_t len)
 {
     static const size_t kBytesPerRow = 16;
@@ -25,6 +35,7 @@ static void dump(uint8_t* buf, size_t len)
 
 S2Daemon::S2Daemon(void)
 {
+    Savage::Execute("Echo hi!");
 }
 S2Daemon::~S2Daemon(void)
 {
@@ -35,10 +46,14 @@ size_t S2Daemon::OnSendPacket(uint8_t* buf, size_t len)
     if(len >= 8)
     {
         Savage::S2Packet pkt(buf, len);
-        if(pkt.CmdId() != 0x5B)
+        if(pkt.CmdId() == 0x5B)
         {
-            printf("Sent cmd 0x%02X\r\n", pkt.CmdId());
-            dump(buf, len);
+            printf("Sent cmd 0x%02X LEN = %zu;\r\n", pkt.CmdId(), pkt.Length());
+            char bits[17] = {};
+            makeBitString(buf[30], bits);
+            makeBitString(buf[31], &bits[8]);
+            printf("CTRL %s\r\n", bits);
+            dump(&buf[8], len-8);
             printf("-----\r\n");
         }
     }
@@ -53,6 +68,12 @@ size_t S2Daemon::OnReceivePacket(uint8_t* buf, size_t len)
         Savage::S2Packet pkt(buf, len);
         switch(pkt.CmdId())
         {
+            case Savage::ekClientSnapshot:
+            {
+                //printf("Received client snapshot 0x%02X\r\n", pkt.CmdId());
+                //dump(buf, len);
+                //printf("-----\r\n");
+            } break;
             case Savage::ekGameData:
             {
                 //printf("GAMEDATA PACKET\r\n-----\r\n");
