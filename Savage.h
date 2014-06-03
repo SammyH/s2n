@@ -50,6 +50,11 @@ namespace Savage
             m_Pos -= m_LastMove;
             m_LastMove = 0;
         }
+        void ResetPos(void)
+        {
+            m_Pos = 0;
+            m_LastMove = 0;
+        }
 
         template<typename T>
         T Read(void)
@@ -136,6 +141,39 @@ namespace Savage
         uint8_t  m_Type;
         uint16_t m_SenderId;
         uint8_t  m_CmdId;
+    };
+    
+    class S2ClientSnapshot : public S2Packet
+    {
+    public:
+        S2ClientSnapshot(uint8_t* buf, size_t len) : S2Packet(buf, len)
+        {
+            m_FrameNumber = ReadDWord();
+            m_Timestamp = ReadDWord();
+
+            /* selected weapon byte */
+            m_Input[0] = ReadByte();
+            
+            /* bit 1 = attack, bit 2 = dodge, bit 3 = block, bit 4 = W, bit 5 = S, bit 6 = A, bit 7 = D, bit 8 = ??? */
+            m_Input[1] = ReadByte();
+            
+            /* more inputs, jump etc ... */
+            m_Input[2] = ReadByte();
+            m_Input[3] = ReadByte();
+
+            /* haven't seen it not just equal 0xFF, probably related to typevector, idk */
+            m_Unknown = ReadByte();
+
+            /* bit 1 = pitch 4bytes/float, bit 2 = ??, bit 3 = yaw 4bytes/float, bit 6 = selected entity index 4bytes/uint, bit 7 = impulse (e.g. savage skill 4 or 5) 1byte */
+            m_Flags = ReadByte();
+        }
+
+    private:
+        uint32_t m_FrameNumber;
+        uint32_t m_Timestamp;
+        uint8_t  m_Input[4];
+        uint8_t  m_Unknown;
+        uint8_t  m_Flags;
     };
 
     enum ePacketType

@@ -73,6 +73,7 @@ size_t S2Daemon::OnReceivePacket(uint8_t* buf, size_t len)
                 //printf("Received client snapshot 0x%02X\r\n", pkt.CmdId());
                 //dump(buf, len);
                 //printf("-----\r\n");
+                
             } break;
             case Savage::ekGameData:
             {
