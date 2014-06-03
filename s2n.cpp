@@ -7,9 +7,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-
 #include "Prerequisites.h"
 #include "S2Daemon.h"
+
+#define ENABLE_DAEMON
 
 typedef ssize_t(*tsendto)(int,const void*,size_t,int,const struct sockaddr*,socklen_t);
 ssize_t sendto(int sockfd, const void* buf, size_t len, int flags, const struct sockaddr* dest_addr, socklen_t addrlen)
@@ -43,6 +44,8 @@ ssize_t recvfrom(int sockfd, void* buf, size_t len, int flags, struct sockaddr* 
 
     return r;
 }
+
+#endif
 
 typedef struct malloc_chunk* mchunkptr;
 #define INTERNAL_SIZE_T uint32_t
